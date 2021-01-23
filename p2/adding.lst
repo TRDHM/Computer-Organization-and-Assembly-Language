@@ -1,0 +1,63 @@
+     1                                  ; Daniel Mitchell
+     2                                  ; Prog2
+     3                                  ; September 11, 2020
+     4                                  ; Etc...
+     5                                  
+     6                                  SECTION .data
+     7                                  ; define data/variables here.  Think DB, DW, DD, DQ
+     8                                  
+     9                                  
+    10                                  
+    11                                  SECTION .bss
+    12                                  ; define uninitialized data here
+    13                                  
+    14                                  SECTION .text
+    15                                  global _main
+    16                                  _main:
+    17                                  
+    18                                  ; put your code here.
+    19                                  
+    20 00000000 66B8BACD                mov	AX, 0CDBAh
+    21 00000004 66BBABCD                mov	BX, 0CDABh
+    22 00000008 6601D8                  add 	AX, BX
+    23                                  
+    24 0000000B 66B8CDAB                mov 	AX, 0ABCDh
+    25 0000000F 66BBCDAB                mov	BX, 0ABCDh
+    26 00000013 6601D8                  add 	AX, BX
+    27                                  
+    28 00000016 66B8FAFA                mov	AX, 0FAFAh
+    29 0000001A 66BB0505                mov 	BX, 0505h
+    30 0000001E 6601D8                  add 	AX, BX
+    31                                  
+    32 00000021 66B8F0F0                mov 	AX, 0F0F0h
+    33 00000025 66BB00FF                mov 	BX, 0FF00h
+    34 00000029 6601D8                  add	AX, BX
+    35                                  
+    36 0000002C 66B868D4                mov 	AX, 0D468h
+    37 00000030 66BB982B                mov	BX, 2B98h
+    38 00000034 6601D8                  add	AX, BX
+    39                                  
+    40 00000037 66B80F70                mov	AX, 700Fh
+    41 0000003B 66BBF10F                mov 	BX, 0FF1h
+    42 0000003F 6601D8                  add	AX, BX
+    43                                  
+    44 00000042 66B83412                mov	AX, 1234h
+    45 00000046 66BB5476                mov	BX, 7654h
+    46 0000004A 6601D8                  add 	AX, BX
+    47                                  
+    48 0000004D 66B80B0B                mov 	AX, 0B0Bh
+    49 00000051 66BB1EA1                mov 	BX, 0A11Eh
+    50 00000055 6601D8                  add	AX, BX
+    51                                  
+    52 00000058 66B85476                mov 	AX, 7654h
+    53 0000005C 66BB9A78                mov 	BX, 789Ah
+    54 00000060 6601D8                  add	AX, BX
+    55                                  
+    56 00000063 66B80080                mov	AX, 8000h
+    57 00000067 66BB0080                mov	BX, 8000h
+    58 0000006B 6601D8                  add	AX, BX
+    59                                  
+    60                                  ; Normal termination code
+    61 0000006E B801000000              mov eax, 1
+    62 00000073 BB00000000              mov ebx, 0
+    63 00000078 CD80                    int 80h

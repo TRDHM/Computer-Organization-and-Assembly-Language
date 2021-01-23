@@ -1,0 +1,35 @@
+     1                                  ; DANIEL MITCHELL
+     2                                  ; MAX DWORD FIB - P6
+     3                                  ; OCTOBER 13, 2020
+     4                                  ; USES LOOP TO FIND MAX FIB DWORD
+     5                                  
+     6                                  SECTION .data
+     7                                  ; define data/variables here.  Think DB, DW, DD, DQ
+     8                                  
+     9                                  SECTION .bss
+    10                                  ; define uninitialized data here
+    11 00000000 <res 00000004>          MaxFib:		RESD 1
+    12                                  
+    13                                  SECTION .text
+    14                                  global _main
+    15                                  _main:
+    16                                  ; put your code here.
+    17 00000000 B800000000              	mov	eax, 0
+    18 00000005 BA01000000              	mov	edx, 1
+    19                                  
+    20                                  top:				;;loop until carry flag is set
+    21 0000000A 01C2                    	add	edx, eax
+    22 0000000C 7206                    jc fin
+    23 0000000E 89D8                    	mov	eax, ebx	;;store the result in ebx if no carry	
+    24 00000010 89D3                    	mov	ebx, edx
+    25                                  
+    26 00000012 73F6                    jnc top
+    27                                  
+    28                                  fin:
+    29 00000014 A3[00000000]            	mov	[MaxFib], eax
+    30                                  
+    31                                  lastBreak:
+    32                                  ; Normal termination code
+    33 00000019 B801000000              mov eax, 1
+    34 0000001E BB00000000              mov ebx, 0
+    35 00000023 CD80                    int 80h

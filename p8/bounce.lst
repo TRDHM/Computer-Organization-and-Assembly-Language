@@ -1,0 +1,168 @@
+     1                                  ; Daniel Mitchell
+     2                                  ; P8 - Bounce
+     3                                  ; 02/11/20
+     4                                  ; Seems like it might be hard by virtue of 'never done this before' but doable
+     5                                  %macro Print 2
+     6                                  pusha
+     7                                  mov	eax, 4
+     8                                  mov	ebx, 1
+     9                                  mov	ecx, %1
+    10                                  mov	edx, %2
+    11                                  int 	80h
+    12                                  popa
+    13                                  %endmacro
+    14                                  
+    15                                  %macro setCursor 2	;;takes row and col (in that order) as values and passes to _cursor
+    16                                  mov	ah, %1
+    17                                  mov	al, %2
+    18                                  call _cursor
+    19                                  %endmacro
+    20                                  
+    21                                  
+    22                                  SECTION .data
+    23                                  ; define data/variables here.  Think DB, DW, DD, DQ
+    24 00000000 20                      message:	db " "	;makes a space
+    25 00000001 54686973204973204D-     		db "This Is My Message, it's a little boring but I like it"
+    26 0000000A 79204D657373616765-
+    27 00000013 2C2069742773206120-
+    28 0000001C 6C6974746C6520626F-
+    29 00000025 72696E672062757420-
+    30 0000002E 49206C696B65206974 
+    31 00000037 20                      		db " " 	;makes another space
+    32                                  msglen:	EQU	($-message)
+    33                                  offset: EQU	(79 - msglen)
+    34                                  
+    35 00000038 0000000052030000        sec	dd	0, 850
+    36                                  
+    37 00000040 1B5B324A                clr	db	1bh,'[2J'
+    38                                  
+    39                                  
+    40 00000044 1B5B                    pos	db	1bh, '['
+    41 00000046 3030                    row	db	'00'
+    42 00000048 3B                      	db	';'
+    43 00000049 3030                    col	db	'00'
+    44 0000004B 48                      	db	'H'
+    45                                  
+    46 0000004C 00                      currCol	db	0
+    47                                  SECTION .bss
+    48                                  ; define uninitialized data here
+    49                                  
+    50                                  SECTION .text
+    51                                  global _main
+    52                                  _main:
+    53 00000000 E8E5000000              call	_clrscr
+    54                                  ;;clears the screen on start
+    55 00000005 B100                    mov	cl, 0
+    56                                  
+    57                                  ; put your code here.
+    58                                  toploop:
+    59                                  
+    60 00000007 B917000000              mov	ecx, offset
+    61                                  forwardPrint:
+    62 0000000C FE05[4C000000]          inc		BYTE [currCol]
+    63                                  setCursor	10, [currCol]
+    64 00000012 B40A                <1> mov ah, %1
+    65 00000014 A0[4C000000]        <1> mov al, %2
+    66 00000019 E881000000          <1> call _cursor
+    67                                  Print		message, msglen
+    68 0000001E 60                  <1> pusha
+    69 0000001F B804000000          <1> mov eax, 4
+    70 00000024 BB01000000          <1> mov ebx, 1
+    71 00000029 B9[00000000]        <1> mov ecx, %1
+    72 0000002E BA38000000          <1> mov edx, %2
+    73 00000033 CD80                <1> int 80h
+    74 00000035 61                  <1> popa
+    75 00000036 E850000000              call		_Sleep
+    76 0000003B E8AA000000              call		_clrscr
+    77                                  
+    78                                  b1:
+    79                                  
+    80 00000040 E2CA                    loop forwardPrint
+    81                                  
+    82 00000042 B917000000              mov	ecx, offset
+    83                                  revP:
+    84 00000047 FE0D[4C000000]          dec		BYTE [currCol]
+    85                                  setCursor	10,[currCol]
+    86 0000004D B40A                <1> mov ah, %1
+    87 0000004F A0[4C000000]        <1> mov al, %2
+    88 00000054 E846000000          <1> call _cursor
+    89                                  Print		message, msglen
+    90 00000059 60                  <1> pusha
+    91 0000005A B804000000          <1> mov eax, 4
+    92 0000005F BB01000000          <1> mov ebx, 1
+    93 00000064 B9[00000000]        <1> mov ecx, %1
+    94 00000069 BA38000000          <1> mov edx, %2
+    95 0000006E CD80                <1> int 80h
+    96 00000070 61                  <1> popa
+    97 00000071 E815000000              call		_Sleep
+    98 00000076 E86F000000              call		_clrscr
+    99                                  b2:
+   100 0000007B E2CA                    loop revP
+   101                                  
+   102                                  b3:
+   103 0000007D EB88                    jmp 	toploop
+   104                                  
+   105                                  
+   106                                  
+   107                                  ; Normal termination code
+   108 0000007F B801000000              mov eax, 1
+   109 00000084 BB00000000              mov ebx, 0
+   110 00000089 CD80                    int 80h
+   111                                  
+   112                                  
+   113                                  _Sleep:		;sleeps for about half a sec
+   114 0000008B 60                      pusha
+   115 0000008C B8A2000000              mov	eax, 162
+   116 00000091 BB[38000000]            mov	ebx, sec
+   117 00000096 B900000000              mov	ecx, 0
+   118 0000009B CD80                    int	80h
+   119 0000009D 61                      popa
+   120 0000009E C3                      ret
+   121                                  
+   122                                  
+   123                                  _cursor:	;;needs row in ah and col in al
+   124 0000009F 60                      pusha
+   125                                  
+   126                                  ;save orig eax
+   127 000000A0 50                      push 	eax
+   128                                  
+   129                                  ;process row
+   130 000000A1 66C1E808                shr 	ax, 8
+   131 000000A5 B30A                    mov	bl, 10
+   132 000000A7 F6F3                    div	bl
+   133                                  bbreak1:
+   134 000000A9 80C430                  add	ah,'0'
+   135 000000AC 0430                    add	al,'0'
+   136                                  bbreak2:
+   137 000000AE A2[46000000]            mov	BYTE [row], al
+   138 000000B3 8825[47000000]          mov	BYTE [row+1], ah
+   139                                  
+   140                                  ;process col
+   141 000000B9 58                      pop	eax	;;restore original parameter
+   142 000000BA 6625FF00                and	ax, 0FFh
+   143 000000BE B30A                    mov	bl, 10
+   144 000000C0 F6F3                    div	bl
+   145 000000C2 80C430                  add	ah, '0'
+   146 000000C5 0430                    add	al, '0'
+   147 000000C7 A2[49000000]            mov	BYTE [col], al
+   148 000000CC 8825[4A000000]          mov	BYTE [col+1], ah
+   149                                  
+   150                                  ;print set cursor codes
+   151 000000D2 B804000000              mov	eax, 4
+   152 000000D7 BB01000000              mov	ebx, 1
+   153 000000DC B9[44000000]            mov	ecx, pos
+   154 000000E1 BA08000000              mov	edx, 8
+   155 000000E6 CD80                    int	80h
+   156                                  
+   157 000000E8 61                      popa
+   158 000000E9 C3                      ret
+   159                                  
+   160                                  _clrscr:
+   161 000000EA 60                      pusha
+   162 000000EB B804000000              mov	eax, 4
+   163 000000F0 BB01000000              mov	ebx, 1
+   164 000000F5 B9[40000000]            mov	ecx, clr
+   165 000000FA BA04000000              mov	edx, 4
+   166 000000FF CD80                    int	80h
+   167 00000101 61                      popa
+   168 00000102 C3                      ret

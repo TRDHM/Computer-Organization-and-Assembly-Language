@@ -1,0 +1,41 @@
+     1                                  ; Daniel Mitchell
+     2                                  ; p4
+     3                                  ; October 2, 2020
+     4                                  ; First 16 Fibonnaci numbers
+     5                                  
+     6                                  SECTION .data
+     7                                  ; define data/variables here.  Think DB, DW, DD, DQ
+     8                                  
+     9                                  SECTION .bss
+    10                                  ; define uninitialized data here
+    11 00000000 <res 00000040>          Fibs:	RESD 16
+    12                                  
+    13                                  
+    14                                  SECTION .text
+    15                                  global _main
+    16                                  _main:
+    17                                  
+    18                                  ; put your code here.
+    19 00000000 C705[00000000]0000-     mov 	[Fibs],	dword 0
+    20 00000008 0000               
+    21 0000000A C705[04000000]0100-     mov 	[Fibs+4], dword 1
+    22 00000012 0000               
+    23                                  
+    24 00000014 BB[00000000]            mov 	ebx, Fibs
+    25 00000019 B90E000000              mov	ecx, 14
+    26                                  
+    27                                  top:
+    28 0000001E 8B13                    	mov	edx, DWORD[ebx]
+    29 00000020 035304                  	add	edx, DWORD[ebx+4]
+    30 00000023 43                      	inc	ebx
+    31 00000024 895304                  	mov	[ebx+4], edx
+    32 00000027 31D2                    	xor 	edx, edx
+    33                                  
+    34 00000029 E2F3                    	loop top
+    35                                  
+    36                                  done:
+    37                                  
+    38                                  ; Normal termination code
+    39 0000002B B801000000              mov eax, 1
+    40 00000030 BB00000000              mov ebx, 0
+    41 00000035 CD80                    int 80h

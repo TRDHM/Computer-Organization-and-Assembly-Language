@@ -1,0 +1,159 @@
+     1                                  ; Daniel Mitchell
+     2                                  ; P9 - Sort
+     3                                  ; November 4, 2020
+     4                                  ; CSC 245 def helped with this
+     5                                  %macro	print	2
+     6                                  	pusha
+     7                                   	mov eax, 4
+     8                                  	mov ebx, 1
+     9                                  	mov ecx, %1
+    10                                  	mov edx, %2
+    11                                  	int 80h
+    12                                  	popa
+    13                                  %endmacro
+    14                                  
+    15                                  %macro printArray 1	;takes array len as input
+    16                                  pusha	 
+    17                                  mov	ecx, %1	
+    18                                  mov	edx, 0
+    19                                  call	_printArray
+    20                                  popa
+    21                                  %endmacro
+    22                                  
+    23                                  SECTION .data
+    24                                  ; define data/variables here.  Think DB, DW, DD, DQ
+    25 00000000 20200A                  output:	db	"  ", 10
+    26 00000003 15210501072A37          nums:	db	21, 33, 5, 1, 7, 42, 55
+    27                                  numslen: EQU $-nums
+    28 0000000A 0A                      ten:	db	10
+    29 0000000B 64                      hundred:db	100
+    30                                  
+    31 0000000C 1B5B324A                clr	db	1bh,'[2J'
+    32                                  
+    33 00000010 4F726967696E616C20-     ogHeader: db	"Original Array", 10
+    34 00000019 41727261790A       
+    35                                  oglen:	EQU $-ogHeader
+    36                                  
+    37 0000001F 536F72746564204172-     sortedHeader: db	"Sorted Array", 10
+    38 00000028 7261790A           
+    39                                  sortedlen: EQU $-sortedHeader
+    40                                  
+    41                                  SECTION .bss
+    42                                  ; define uninitialized data here
+    43 00000000 <res 00000001>          key	resb 	1
+    44                                  
+    45                                  
+    46                                  SECTION .text
+    47                                  global _main
+    48                                  _main:
+    49 00000000 E8D8000000              call	_clrscr
+    50                                  ; put your code here.
+    51                                  print	ogHeader, oglen
+    52 00000005 60                  <1>  pusha
+    53 00000006 B804000000          <1>  mov eax, 4
+    54 0000000B BB01000000          <1>  mov ebx, 1
+    55 00000010 B9[10000000]        <1>  mov ecx, %1
+    56 00000015 BA0F000000          <1>  mov edx, %2
+    57 0000001A CD80                <1>  int 80h
+    58 0000001C 61                  <1>  popa
+    59                                  
+    60                                  printArray	numslen
+    61 0000001D 60                  <1> pusha
+    62 0000001E B907000000          <1> mov ecx, %1
+    63 00000023 BA00000000          <1> mov edx, 0
+    64 00000028 E83B000000          <1> call _printArray
+    65 0000002D 61                  <1> popa
+    66 0000002E E876000000              call	_sortEm
+    67                                  
+    68                                  print 	sortedHeader, sortedlen
+    69 00000033 60                  <1>  pusha
+    70 00000034 B804000000          <1>  mov eax, 4
+    71 00000039 BB01000000          <1>  mov ebx, 1
+    72 0000003E B9[1F000000]        <1>  mov ecx, %1
+    73 00000043 BA0D000000          <1>  mov edx, %2
+    74 00000048 CD80                <1>  int 80h
+    75 0000004A 61                  <1>  popa
+    76                                  printArray	numslen
+    77 0000004B 60                  <1> pusha
+    78 0000004C B907000000          <1> mov ecx, %1
+    79 00000051 BA00000000          <1> mov edx, 0
+    80 00000056 E80D000000          <1> call _printArray
+    81 0000005B 61                  <1> popa
+    82                                  
+    83                                  lastBreak:
+    84                                  ; Normal termination code
+    85 0000005C B801000000              mov eax, 1
+    86 00000061 BB00000000              mov ebx, 0
+    87 00000066 CD80                    int 80h
+    88                                  
+    89                                  _printArray:
+    90                                  top:
+    91 00000068 8A82[03000000]          	mov al, [nums+edx]
+    92 0000006E E81C000000              	call	_convert
+    93                                  	print	output, 4
+    94 00000073 60                  <1>  pusha
+    95 00000074 B804000000          <1>  mov eax, 4
+    96 00000079 BB01000000          <1>  mov ebx, 1
+    97 0000007E B9[00000000]        <1>  mov ecx, %1
+    98 00000083 BA04000000          <1>  mov edx, %2
+    99 00000088 CD80                <1>  int 80h
+   100 0000008A 61                  <1>  popa
+   101 0000008B 42                      	inc edx
+   102 0000008C E2DA                    loop top
+   103                                  
+   104                                  
+   105 0000008E C3                      ret
+   106                                  
+   107                                  _convert:	;al should have byte number
+   108 0000008F 60                      pusha
+   109 00000090 BB[00000000]            mov	ebx, output	
+   110 00000095 30E4                    xor	ah, ah		;clears ax so al has the number passed in
+   111 00000097 F635[0A000000]          div	BYTE [ten]
+   112 0000009D 0430                    add	al, '0'
+   113 0000009F 8803                    mov	[ebx], al
+   114 000000A1 80C430                  add	ah, '0'
+   115 000000A4 43                      inc	ebx
+   116 000000A5 8823                    mov	[ebx], ah
+   117                                  
+   118 000000A7 61                      popa 
+   119 000000A8 C3                      ret
+   120                                  
+   121                                  _sortEm:	;implements a bubble sort on the array
+   122 000000A9 60                      pusha
+   123 000000AA 66B90700                mov	cx, numslen	;can't store ecx inside bx, but loop operator still counts it
+   124 000000AE 6649                    dec	cx
+   125                                  
+   126                                  nextCheck:
+   127 000000B0 6689CB                  mov	bx, cx
+   128 000000B3 BE00000000              mov	esi, 0
+   129                                  
+   130                                  nextCompare:
+   131 000000B8 8A86[03000000]          mov	al, [nums+esi]
+   132 000000BE 8A96[04000000]          mov	dl, [nums+esi+1]
+   133 000000C4 38D0                    cmp	al, dl
+   134                                  
+   135 000000C6 720C                    jc	noswap
+   136                                  
+   137 000000C8 8896[03000000]          mov	[nums+esi], dl
+   138 000000CE 8886[04000000]          mov	[nums+esi+1], al
+   139                                  
+   140                                  noswap:
+   141 000000D4 46                      inc	esi
+   142 000000D5 664B                    dec	bx
+   143 000000D7 75DF                    jnz	nextCompare
+   144                                  
+   145 000000D9 E2D5                    loop	nextCheck
+   146                                  
+   147 000000DB 61                      popa
+   148 000000DC C3                      ret
+   149                                  
+   150                                  _clrscr:
+   151 000000DD 60                      pusha
+   152 000000DE B804000000              mov	eax, 4
+   153 000000E3 BB01000000              mov	ebx, 1
+   154 000000E8 B9[0C000000]            mov	ecx, clr
+   155 000000ED BA04000000              mov	edx, 4
+   156 000000F2 CD80                    int	80h
+   157 000000F4 61                      popa
+   158 000000F5 C3                      ret
+   159                                  
