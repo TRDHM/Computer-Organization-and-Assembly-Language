@@ -1,3 +1,1 @@
-# ist276
-
-IST 276 Web Programming
+Projects from my Assembly and Computer Organization class.
