@@ -1,0 +1,449 @@
+     1                                  ; NAME:  Daniel Mitchell
+     2                                  ; Assignment: Wanderer
+     3                                  ; Date: Nov 10, 2020
+     4                                  ; Current issues to fix: itoa pushes 4 bytes instead of 2 so need to cut them off before inserting, causes row num to print besides G and nothing else, wrapping works but the extra row/col being printed out overwrit
+     5                                  
+     6                                  %macro setCursor 2	;%1 = row, %2 = col, sets cursor using the _cursor proc
+     7                                  mov	ah, %1
+     8                                  mov	al, %2
+     9                                  call	_cursor
+    10                                  %endmacro
+    11                                  
+    12                                  %macro callitoa 2	;ax = num, ebx = output 
+    13                                  	pusha
+    14                                  	mov ax, %1
+    15                                  	mov ebx, %2
+    16                                  	call _itoa
+    17                                  popa
+    18                                  %endmacro	
+    19                                  
+    20                                  
+    21                                  %macro Print 2
+    22                                  pusha
+    23                                  mov	eax, 4
+    24                                  mov	ebx, 1
+    25                                  mov	ecx, %1
+    26                                  mov	edx, %2
+    27                                  int	80h
+    28                                  popa
+    29                                  %endmacro
+    30                                  
+    31                                  %macro printBoundary 0	;prints the boundaries
+    32                                  mov	BYTE [currRow], 1
+    33                                  mov	BYTE [currCol], 1
+    34                                  first:			;prints top wall
+    35                                  cmp	BYTE [currCol], 41
+    36                                  je	next
+    37                                  setCursor	[currRow], [currCol]
+    38                                  Print		star, starlen
+    39                                  inc		BYTE [currCol]
+    40                                  jmp		first
+    41                                  
+    42                                  next:			;prints left vertical wall
+    43                                  mov	BYTE [currRow], 1
+    44                                  mov	BYTE [currCol], 1
+    45                                  two:
+    46                                  cmp	BYTE [currRow], 21
+    47                                  je	nextSecond
+    48                                  setCursor	[currRow], [currCol]
+    49                                  Print		star, starlen
+    50                                  inc		BYTE [currRow]
+    51                                  jmp		two
+    52                                  
+    53                                  nextSecond:		;prints bottom row
+    54                                  mov	BYTE [currRow], 20
+    55                                  mov	BYTE [currCol], 1
+    56                                  third:
+    57                                  cmp	BYTE [currCol], 41
+    58                                  je	finalSecond
+    59                                  setCursor	[currRow], [currCol]
+    60                                  Print		star, starlen
+    61                                  inc		BYTE [currCol]
+    62                                  jmp		third
+    63                                  
+    64                                  finalSecond:		;prints right vertical wall
+    65                                  mov	BYTE [currRow], 1
+    66                                  mov	BYTE [currCol], 40
+    67                                  fourth:
+    68                                  cmp	BYTE [currRow], 21
+    69                                  je	endBoundary
+    70                                  setCursor	[currRow], [currCol]
+    71                                  Print		star, starlen
+    72                                  inc		BYTE [currRow]
+    73                                  jmp		fourth
+    74                                  
+    75                                  
+    76                                  endBoundary:
+    77                                  %endmacro
+    78                                  
+    79                                  LEN:	EQU 21
+    80                                  
+    81                                  ; Constant for Size of array of structs
+    82                                  ; Define Structure for character on screen
+    83                                  STRUC mStruct
+    84 00000000 <res 00000002>          		RESB 2  ; space for <esc>[
+    85 00000002 <res 00000002>          	.row:	RESB 2  ; two digit number (characters)
+    86 00000004 <res 00000001>          		RESB 1  ; space for ;
+    87 00000005 <res 00000002>          	.col:	RESB 2  ; two digit number (characters)
+    88 00000007 <res 00000001>          		RESB 1  ; space for the H
+    89 00000008 <res 00000001>          	.char:	RESB 1  ; space for THE character
+    90                                  	.size:
+    91                                  ENDSTRUC
+    92                                  
+    93                                  SECTION .data
+    94                                  ; clear screen string
+    95 00000000 1B5B324A                clr		db 1bh,'[2J'
+    96 00000004 2A00                    star		db '*', 0
+    97                                  starlen:	EQU	($-star)
+    98                                  
+    99 00000006 1B5B                    pos	db	1bh, '['
+   100 00000008 3030                    row	db	'00'
+   101 0000000A 3B                      	db	';'
+   102 0000000B 3030                    col	db	'00'
+   103 0000000D 48                      	db	'H'
+   104                                  
+   105 0000000E 3030                    currCol db	'00'
+   106 00000010 3030                    currRow	db	'00'
+   107 00000012 1000                    nextCol dw	16
+   108 00000014 0F00                    nextRow dw 	15	
+   109                                  
+   110 00000016 0A                      ten:	db	10
+   111 00000017 64                      hundred: db	100
+   112                                  
+   113                                  
+   114 00000018 0000000052030000        sec	dd	0, 850
+   115                                  
+   116                                  ; Create an array of structs: formatted like the print interrupt uses.
+   117                                  message:
+   118                                  		
+   119 00000020 1B5B31353B31364847      		db 1bh,'[15;16HG'
+   120 00000029 1B5B31353B3137486F      		db 1bh,'[15;17Ho'
+   121 00000032 1B5B31353B31384820      		db 1bh,'[15;18H '
+   122 0000003B 1B5B31353B31394842      		db 1bh,'[15;19HB'
+   123 00000044 1B5B31353B32304865      		db 1bh,'[15;20He'
+   124 0000004D 1B5B31353B32314861      		db 1bh,'[15;21Ha'
+   125 00000056 1B5B31353B32324872      		db 1bh,'[15;22Hr'
+   126 0000005F 1B5B31353B32334873      		db 1bh,'[15;23Hs'
+   127 00000068 1B5B31353B32344821      		db 1bh,'[15;24H!'
+   128 00000071 1B5B31353B32354820      		db 1bh,'[15;25H '
+   129 0000007A 1B5B31353B32364857      		db 1bh,'[15;26HW'
+   130 00000083 1B5B31353B32374869      		db 1bh,'[15;27Hi'
+   131 0000008C 1B5B31353B3238486E      		db 1bh,'[15;28Hn'
+   132 00000095 1B5B31353B32394820      		db 1bh,'[15;29H '
+   133 0000009E 1B5B31353B33304849      		db 1bh,'[15;30HI'
+   134 000000A7 1B5B31353B33314874      		db 1bh,'[15;31Ht'
+   135 000000B0 1B5B31353B33324820      		db 1bh,'[15;32H '
+   136 000000B9 1B5B31353B33334841      		db 1bh,'[15;33HA'
+   137 000000C2 1B5B31353B3334486C      		db 1bh,'[15;34Hl'
+   138 000000CB 1B5B31353B3335486C      		db 1bh,'[15;35Hl'
+   139 000000D4 1B5B31353B33364820      		db 1bh,'[15;36H '
+   140                                  
+   141                                  SECTION .bss
+   142 00000000 <res 00000002>          twodigits: RESW	1
+   143                                  
+   144                                  SECTION .text
+   145                                  global _main
+   146                                  _main:
+   147                                  ; clear the screen
+   148 00000000 E866020000              call	_clrscr
+   149                                  ; Demonstrate an infinite loop calling  functions which uses an array of structs
+   150                                  
+   151                                  printBoundary
+   152 00000005 C605[10000000]01    <1> mov BYTE [currRow], 1
+   153 0000000C C605[0E000000]01    <1> mov BYTE [currCol], 1
+   154                              <1> first:
+   155 00000013 803D[0E000000]29    <1> cmp BYTE [currCol], 41
+   156 0000001A 7430                <1> je next
+   157                              <1> setCursor [currRow], [currCol]
+   158 0000001C 8A25[10000000]      <2> mov ah, %1
+   159 00000022 A0[0E000000]        <2> mov al, %2
+   160 00000027 E872020000          <2> call _cursor
+   161                              <1> Print star, starlen
+   162 0000002C 60                  <2> pusha
+   163 0000002D B804000000          <2> mov eax, 4
+   164 00000032 BB01000000          <2> mov ebx, 1
+   165 00000037 B9[04000000]        <2> mov ecx, %1
+   166 0000003C BA02000000          <2> mov edx, %2
+   167 00000041 CD80                <2> int 80h
+   168 00000043 61                  <2> popa
+   169 00000044 FE05[0E000000]      <1> inc BYTE [currCol]
+   170 0000004A EBC7                <1> jmp first
+   171                              <1> 
+   172                              <1> next:
+   173 0000004C C605[10000000]01    <1> mov BYTE [currRow], 1
+   174 00000053 C605[0E000000]01    <1> mov BYTE [currCol], 1
+   175                              <1> two:
+   176 0000005A 803D[10000000]15    <1> cmp BYTE [currRow], 21
+   177 00000061 7430                <1> je nextSecond
+   178                              <1> setCursor [currRow], [currCol]
+   179 00000063 8A25[10000000]      <2> mov ah, %1
+   180 00000069 A0[0E000000]        <2> mov al, %2
+   181 0000006E E82B020000          <2> call _cursor
+   182                              <1> Print star, starlen
+   183 00000073 60                  <2> pusha
+   184 00000074 B804000000          <2> mov eax, 4
+   185 00000079 BB01000000          <2> mov ebx, 1
+   186 0000007E B9[04000000]        <2> mov ecx, %1
+   187 00000083 BA02000000          <2> mov edx, %2
+   188 00000088 CD80                <2> int 80h
+   189 0000008A 61                  <2> popa
+   190 0000008B FE05[10000000]      <1> inc BYTE [currRow]
+   191 00000091 EBC7                <1> jmp two
+   192                              <1> 
+   193                              <1> nextSecond:
+   194 00000093 C605[10000000]14    <1> mov BYTE [currRow], 20
+   195 0000009A C605[0E000000]01    <1> mov BYTE [currCol], 1
+   196                              <1> third:
+   197 000000A1 803D[0E000000]29    <1> cmp BYTE [currCol], 41
+   198 000000A8 7430                <1> je finalSecond
+   199                              <1> setCursor [currRow], [currCol]
+   200 000000AA 8A25[10000000]      <2> mov ah, %1
+   201 000000B0 A0[0E000000]        <2> mov al, %2
+   202 000000B5 E8E4010000          <2> call _cursor
+   203                              <1> Print star, starlen
+   204 000000BA 60                  <2> pusha
+   205 000000BB B804000000          <2> mov eax, 4
+   206 000000C0 BB01000000          <2> mov ebx, 1
+   207 000000C5 B9[04000000]        <2> mov ecx, %1
+   208 000000CA BA02000000          <2> mov edx, %2
+   209 000000CF CD80                <2> int 80h
+   210 000000D1 61                  <2> popa
+   211 000000D2 FE05[0E000000]      <1> inc BYTE [currCol]
+   212 000000D8 EBC7                <1> jmp third
+   213                              <1> 
+   214                              <1> finalSecond:
+   215 000000DA C605[10000000]01    <1> mov BYTE [currRow], 1
+   216 000000E1 C605[0E000000]28    <1> mov BYTE [currCol], 40
+   217                              <1> fourth:
+   218 000000E8 803D[10000000]15    <1> cmp BYTE [currRow], 21
+   219 000000EF 7430                <1> je endBoundary
+   220                              <1> setCursor [currRow], [currCol]
+   221 000000F1 8A25[10000000]      <2> mov ah, %1
+   222 000000F7 A0[0E000000]        <2> mov al, %2
+   223 000000FC E89D010000          <2> call _cursor
+   224                              <1> Print star, starlen
+   225 00000101 60                  <2> pusha
+   226 00000102 B804000000          <2> mov eax, 4
+   227 00000107 BB01000000          <2> mov ebx, 1
+   228 0000010C B9[04000000]        <2> mov ecx, %1
+   229 00000111 BA02000000          <2> mov edx, %2
+   230 00000116 CD80                <2> int 80h
+   231 00000118 61                  <2> popa
+   232 00000119 FE05[10000000]      <1> inc BYTE [currRow]
+   233 0000011F EBC7                <1> jmp fourth
+   234                              <1> 
+   235                              <1> 
+   236                              <1> endBoundary:
+   237                                  mainLoop:
+   238                                    loopBreak:
+   239 00000121 E800010000               	call	_displayMessage	
+   240 00000126 E824010000              	call	_pause
+   241 0000012B 0F31                    	rdtsc
+   242 0000012D E813000000              	call	_randNum
+   243 00000132 E88E000000              	call	_adjustMessage
+   244 00000137 EBE8                    	jmp	mainLoop
+   245                                  
+   246                                  ; Normal termination code
+   247 00000139 B801000000              mov eax, 1
+   248 0000013E BB00000000              mov ebx, 0
+   249 00000143 CD80                    int 80h
+   250                                  ;;;;;;;;;;;;;;;;;;;;; END OF MAIN ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   251                                  
+   252                                  _randNum:	;;takes number from rdtsc and performs the wraparound
+   253 00000145 60                      pusha
+   254 00000146 3C00                    cmp al, 0	;if al < 0, -1 from Row, +1 if not, then jump to checkCol
+   255 00000148 7C09                    jl rowMinus
+   256 0000014A 66FF05[14000000]        inc	WORD [nextRow]
+   257 00000151 EB07                    jmp	checkCol
+   258                                  
+   259                                  rowMinus:
+   260 00000153 66FF0D[14000000]        dec	WORD [nextRow]
+   261                                  
+   262                                  checkCol:	;if ah < 0, -1 from Col, otherwise +1
+   263 0000015A 80FC00                  cmp ah, 0
+   264 0000015D 7C09                    jl	 colMinus
+   265 0000015F 66FF05[12000000]        inc	WORD [nextCol]
+   266 00000166 EB07                    jmp	colWrapCheck
+   267                                  
+   268                                  colMinus:
+   269 00000168 66FF0D[12000000]        dec	WORD [nextCol]
+   270                                  
+   271                                  colWrapCheck:	;checks NextCol and handles wrapping
+   272 0000016F 66833D[12000000]28      cmp	WORD [nextCol], 40
+   273 00000177 7D0C                    jge	makeTwo
+   274 00000179 66833D[12000000]01      cmp	WORD [nextCol], 1
+   275 00000181 7E0D                    jle	makeThreeNine
+   276 00000183 EB14                    jmp	rowWrapCheck
+   277                                  
+   278                                  makeTwo:	;sets nextCol to 2
+   279 00000185 66C705[12000000]02-     mov	WORD [nextCol], 2
+   280 0000018D 00                 
+   281 0000018E EB09                    jmp 	rowWrapCheck
+   282                                  
+   283                                  makeThreeNine:	;sets nextCol to 39
+   284 00000190 66C705[12000000]27-     mov	WORD [nextCol], 39
+   285 00000198 00                 
+   286                                  
+   287                                  rowWrapCheck:	;checks nextRow and handles wrapping if needed
+   288 00000199 66833D[14000000]01      cmp	WORD [nextRow], 1
+   289 000001A1 7E17                    jle	makeNineOne
+   290 000001A3 66833D[14000000]14      cmp	WORD [nextRow], 20
+   291 000001AB 7D02                    jge	makeTwoToo
+   292 000001AD EB14                    jmp	end
+   293                                  
+   294                                  makeTwoToo:
+   295 000001AF 66C705[14000000]02-     mov	WORD [nextRow], 2
+   296 000001B7 00                 
+   297 000001B8 EB09                    jmp	end
+   298                                  
+   299                                  makeNineOne:
+   300 000001BA 66C705[14000000]13-     mov	WORD [nextRow], 19
+   301 000001C2 00                 
+   302                                  
+   303                                  end:
+   304 000001C3 61                      popa
+   305 000001C4 C3                      ret
+   306                                  
+   307                                  ;;;;;;;;;;;;  Function that rotates the characters through the array of structs 
+   308                                  _adjustMessage:	
+   309 000001C5 60                      	pusha
+   310                                  	;push	eax   ; save for bottom
+   311 000001C6 BB[D4000000]            	mov	ebx,message + mStruct.size*20  ;; pointer into array, starting at bottom
+   312 000001CB B915000000              	mov	ecx,LEN    ;; loop 
+   313                                  
+   314                                  _amTop: 
+   315 000001D0 668B53FC                	mov	dx,[ebx - mStruct.size + mStruct.col]
+   316 000001D4 66895305                	mov	WORD [ebx + mStruct.col], dx
+   317 000001D8 668B53F9                	mov	dx,[ebx - mStruct.size + mStruct.row]
+   318 000001DC 66895302                	mov	WORD [ebx + mStruct.row], dx		
+   319                                  
+   320 000001E0 83EB09                  	sub	ebx, mStruct.size
+   321 000001E3 E2EB                    	loop	_amTop
+   322 000001E5 83EB09                  	sub	ebx, mStruct.size
+   323                                  
+   324                                  	callitoa	[nextRow], twodigits
+   325 000001E8 60                  <1>  pusha
+   326 000001E9 66A1[14000000]      <1>  mov ax, %1
+   327 000001EF BB[00000000]        <1>  mov ebx, %2
+   328 000001F4 E8F0000000          <1>  call _itoa
+   329 000001F9 61                  <1> popa
+   330 000001FA 66A1[00000000]          	mov		ax, [twodigits]
+   331 00000200 66A3[22000000]          	mov		[message + mStruct.row], ax
+   332                                  
+   333                                  	callitoa	[nextCol], twodigits
+   334 00000206 60                  <1>  pusha
+   335 00000207 66A1[12000000]      <1>  mov ax, %1
+   336 0000020D BB[00000000]        <1>  mov ebx, %2
+   337 00000212 E8D2000000          <1>  call _itoa
+   338 00000217 61                  <1> popa
+   339 00000218 66A1[00000000]          	mov		ax, [twodigits]
+   340 0000021E 66A3[25000000]          	mov		[message + mStruct.col], ax
+   341 00000224 61                      	popa
+   342 00000225 C3                      	ret
+   343                                  
+   344                                  
+   345                                  ;;;;;;;;;;;   Function to print the array of structs of message
+   346                                  _displayMessage:
+   347 00000226 60                      	pusha
+   348 00000227 BB[D4000000]            	mov	ebx,message + mStruct.size*20  ;ebx = pointer to first index 
+   349 0000022C B915000000              	mov	ecx,LEN
+   350                                  
+   351 00000231 51                      _dmTop:	push	ecx
+   352 00000232 53                      	push	ebx
+   353 00000233 B804000000              	mov	eax,4  ; system print
+   354 00000238 89D9                    	mov	ecx,ebx ; points to string to print
+   355                                  break1:
+   356 0000023A BB01000000              	mov	ebx,1   ; standard out
+   357 0000023F BA09000000              	mov	edx,9   ; num chars to print
+   358 00000244 CD80                    	int	80h
+   359                                  
+   360 00000246 5B                      	pop	ebx
+   361 00000247 83EB09                  	sub	ebx,mStruct.size		;go up one index
+   362 0000024A 59                      	pop	ecx
+   363                                  	
+   364 0000024B E2E4                    	loop	_dmTop
+   365 0000024D 61                      	popa
+   366 0000024E C3                      	ret
+   367                                  
+   368                                  
+   369                                  ;;;;;;;;;;;;;  Function to sleep 1/20 second ;;;;;;;;;;;;;;;;;;;;;
+   370                                  _pause: 
+   371 0000024F 60                      	pusha
+   372 00000250 B8A2000000              	mov	eax,162
+   373 00000255 BB[63020000]            	mov	ebx,seconds
+   374 0000025A B900000000              	mov	ecx,0
+   375 0000025F CD80                    	int	80h
+   376 00000261 61                      	popa
+   377 00000262 C3                      	ret
+   378                                  
+   379                                  ;;;;;;;;;;;;	Tricky use of ram.... put some data here for _pause to use
+   380 00000263 0000000080F0FA02        seconds: dd	0,50000000  ;;;  seconds, nanoseconds
+   381                                  
+   382                                  _clrscr:
+   383 0000026B 60                      pusha
+   384 0000026C B804000000              mov	eax, 4
+   385 00000271 BB01000000              mov	ebx, 1
+   386 00000276 B9[00000000]            mov	ecx, clr
+   387 0000027B BA04000000              mov	edx, 4
+   388 00000280 CD80                    int	80h
+   389 00000282 61                      popa
+   390 00000283 C3                      ret
+   391                                  
+   392                                  _convert:	;al should have byte number
+   393 00000284 60                      pusha
+   394 00000285 BB[00000000]            mov	ebx, twodigits
+   395 0000028A 30E4                    xor	ah, ah
+   396 0000028C F635[16000000]          div	BYTE [ten]
+   397 00000292 0430                    add	al, '0'
+   398 00000294 8803                    mov	[ebx], al
+   399 00000296 80C430                  add	ah, '0'
+   400 00000299 43                      inc	ebx
+   401 0000029A 8823                    mov	[ebx], ah
+   402                                  
+   403 0000029C 61                      popa
+   404 0000029D C3                      ret
+   405                                  
+   406                                  _cursor:
+   407 0000029E 60                      pusha
+   408                                  
+   409 0000029F 50                      push eax
+   410                                  
+   411 000002A0 66C1E808                shr 	ax, 8
+   412 000002A4 B30A                    mov 	bl, 10
+   413 000002A6 F6F3                    div	bl
+   414 000002A8 80C430                  add	ah, '0'
+   415 000002AB 0430                    add	al, '0'
+   416 000002AD A2[08000000]            mov	BYTE [row], al
+   417 000002B2 8825[09000000]          mov	BYTE [row+1], ah
+   418                                  
+   419 000002B8 58                      pop 	eax
+   420 000002B9 6625FF00                and	ax, 0FFh
+   421 000002BD B30A                    mov	bl, 10
+   422 000002BF F6F3                    div	bl
+   423 000002C1 80C430                  add	ah, '0'
+   424 000002C4 0430                    add	al, '0'
+   425 000002C6 A2[0B000000]            mov	BYTE [col], al
+   426 000002CB 8825[0C000000]          mov	BYTE [col+1], ah
+   427                                  
+   428 000002D1 B804000000              mov	eax, 4
+   429 000002D6 BB01000000              mov 	ebx, 1
+   430 000002DB B9[06000000]            mov	ecx, pos
+   431 000002E0 BA08000000              mov	edx, 8
+   432 000002E5 CD80                    int	80h
+   433 000002E7 61                      popa
+   434 000002E8 C3                      ret
+   435                                  
+   436                                  _itoa:
+   437 000002E9 60                      pusha
+   438                                  convb1:
+   439 000002EA B10A                    mov	cl, 10
+   440 000002EC F6F1                    div	cl
+   441                                  
+   442 000002EE 80C430                  add	ah, '0'
+   443 000002F1 0430                    add	al, '0'
+   444                                  
+   445 000002F3 66A3[00000000]          mov	[twodigits], ax
+   446                                  convb2:
+   447 000002F9 61                      popa
+   448 000002FA C3                      ret
+   449                                  
